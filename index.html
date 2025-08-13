@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AI Resume & Portfolio Builder</title>
+  <meta name="description" content="Create, edit, and optimize resumes/portfolios with AI. Dark mode, drag-and-drop, autosave, PDF export, and live preview." />
+  <link rel="canonical" href="." />
+  <meta property="og:title" content="AI Resume & Portfolio Builder" />
+  <meta property="og:description" content="Modern resume builder with AI suggestions, live preview, and PDF export." />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Playfair+Display:wght@400;700&family=Fira+Code:wght@400;600&family=Lato:wght@400;700&family=Roboto:wght@400;700&family=Merriweather:wght@400;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    /* Design system: dark-first semantic tokens */
+    :root {
+      --bg: 16 16% 8%;
+      --surface: 210 10% 12%;
+      --muted: 214 10% 18%;
+      --text: 210 20% 96%;
+      --text-muted: 215 10% 70%;
+      --primary: 262 83% 66%;
+      --primary-600: 262 83% 60%;
+      --accent: 194 78% 55%;
+      --success: 149 60% 45%;
+      --danger: 0 69% 58%;
+      --ring: 262 83% 66%;
+      --card: 210 10% 12%;
+      --border: 210 10% 22%;
+      --shadow: 262 83% 30% / 22%;
+      --radius: 14px;
+      --radius-sm: 10px;
+      /* Font Stacks */
+      --font-inter: "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol", sans-serif;
+      --font-playfair: "Playfair Display", Georgia, "Times New Roman", serif;
+      --font-fira: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --font-roboto: "Roboto", sans-serif;
+      --font-lato: "Lato", sans-serif;
+      --font-merriweather: "Merriweather", serif;
+      --font-source-code: "Source Code Pro", monospace;
+    }
+    .light {
+      --bg: 0 0% 99%;
+      --surface: 0 0% 100%;
+      --muted: 210 22% 96%;
+      --text: 224 14% 12%;
+      --text-muted: 220 10% 40%;
+      --primary: 262 83% 56%;
+      --primary-600: 262 83% 48%;
+      --accent: 194 78% 45%;
+      --success: 149 50% 42%;
+      --danger: 0 73% 50%;
+      --ring: 262 83% 56%;
+      --card: 0 0% 100%;
+      --border: 210 16% 88%;
+      --shadow: 262 83% 30% / 12%;
+    }
+    /* Base */
+    * { box-sizing: border-box }
+    html, body { height: 100% }
+    body {
+      margin: 0;
+      font-family: var(--font-inter);
+      color: hsl(var(--text));
+      background: hsl(var(--bg));
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    /* Scrollbar for textarea and inputs to blend with theme */
+    textarea::-webkit-scrollbar,
+    input::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    textarea::-webkit-scrollbar-track,
+    input::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    textarea::-webkit-scrollbar-thumb,
+    input::-webkit-scrollbar-thumb {
+      background-color: hsl(var(--border));
+      border-radius: 8px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    /* Firefox scrollbar styling */
+    textarea,
+    input {
+      scrollbar-width: thin;
+      scrollbar-color: hsl(var(--border)) transparent;
+    }
+    /* Layout */
+    .container {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 100dvh;
+    }
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: saturate(140%) blur(8px);
+      background: color-mix(in hsl, hsl(var(--bg)) 82%, transparent);
+      border-bottom: 1px solid hsl(var(--border));
+    }
+    .header-inner {
+      display: flex; align-items: center; justify-content: space-between;
+      max-width: 1200px; margin: 0 auto; padding: 12px 20px;
+      gap: 12px;
+    }
+    .brand {
+      display: flex; align-items: center; gap: 12px; font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .brand .logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: radial-gradient(120px 60px at 20% 20%, hsl(var(--primary)/.55), transparent 60%),
+                  radial-gradient(100px 40px at 80% 40%, hsl(var(--accent)/.45), transparent 60%),
+                  linear-gradient(180deg, hsl(var(--muted)), hsl(var(--surface)));
+      box-shadow: 0 10px 30px hsl(var(--shadow)), inset 0 0 0 1px hsl(var(--border));
+    }
+    .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+    /* Controls */
+    .btn {
+      appearance: none; border: 1px solid hsl(var(--border));
+      background: hsl(var(--surface)); color: hsl(var(--text));
+      padding: 10px 14px; border-radius: 12px; font-weight: 600; font-size: 14px;
+      transition: transform .18s ease, background .2s, border-color .2s, box-shadow .2s;
+      display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+      box-shadow: 0 6px 18px -8px hsl(var(--shadow));
+    }
+    .btn:hover { transform: translateY(-1px) }
+    .btn:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px }
+    .btn-primary {
+      background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--primary-600)));
+      border-color: hsl(var(--primary-600));
+      color: white;
+    }
+    .btn-ghost { background: transparent }
+    .main {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 16px;
+      max-width: 1400px;
+      margin: 18px auto;
+      padding: 0 16px 24px;
+    }
+    @media (max-width: 980px) {
+      .main { grid-template-columns: 1fr }
+    }
+    .panel {
+      background: hsl(var(--surface));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      box-shadow: 0 18px 40px -18px hsl(var(--shadow));
+      overflow: clip;
+    }
+    .panel-header {
+      padding: 14px 16px; border-bottom: 1px solid hsl(var(--border));
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+      background: linear-gradient(180deg, hsl(var(--muted)), hsl(var(--surface)));
+    }
+    .panel-body { padding: 14px 14px 2px }
+    .section {
+      border: 1px solid hsl(var(--border)); /* Changed from dashed */
+      border-radius: var(--radius-sm);
+      padding: 12px; margin-bottom: 12px;
+      background: hsl(var(--surface) / .7);
+    }
+    .section.draggable {
+        border-style: dashed;
+        cursor: grab;
+    }
+    .section.drag-over {
+      outline: 2px dashed hsl(var(--ring));
+      outline-offset: 2px;
+      background: hsl(var(--muted) / .7);
+    }
+    .row { display: grid; gap: 10px; grid-template-columns: 1fr 1fr }
+    .full { grid-column: 1 / -1 }
+    label { font-size: 12px; color: hsl(var(--text-muted)); font-weight: 600 }
+    input, textarea, select {
+      width: 100%; padding: 10px 12px; color: hsl(var(--text));
+      background: hsl(var(--bg)); border: 1px solid hsl(var(--border));
+      border-radius: 12px; font: inherit;
+      transition: border-color .2s, box-shadow .2s, background .2s;
+    }
+    textarea { min-height: 90px; resize: vertical }
+    input:focus, textarea:focus, select:focus {
+      outline: none; border-color: hsl(var(--ring)); box-shadow: 0 0 0 4px hsl(var(--ring) / .15);
+    }
+    .muted { color: hsl(var(--text-muted)) }
+    .help { font-size: 12px; color: hsl(var(--text-muted)); margin-top: 6px }
+    /* Preview card */
+    .preview {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      min-height: 70dvh;
+      padding: 32px;
+      overflow: auto;
+      box-shadow: 0 40px 80px -40px hsl(var(--shadow));
+    }
+    .resume {
+      font-family: var(--resume-font, var(--font-inter));
+      color: hsl(var(--text));
+    }
+    .resume h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: .2px; font-weight: 700; }
+    .resume h2 { margin: 16px 0 8px; font-size: 16px; text-transform: uppercase; letter-spacing: 1.2px; color: hsl(var(--text-muted)) }
+    .resume p { margin: 6px 0 }
+    .resume .rule { height: 3px; background: hsl(var(--primary)); border-radius: 3px; margin: 12px 0 18px }
+    .pill {
+      display: inline-block; padding: 6px 10px; border-radius: 999px; border: 1px solid hsl(var(--border));
+      background: hsl(var(--muted)); margin: 4px 6px 0 0; font-size: 12px;
+    }
+    .meta { color: hsl(var(--text-muted)); font-size: 13px }
+    /* Toggle switch style */
+    .toggle-switch { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .toggle-switch input { display: none; }
+    .toggle-switch .slider { width: 34px; height: 20px; background-color: hsl(var(--muted)); border-radius: 17px; position: relative; transition: background-color .2s; }
+    .toggle-switch .slider:before { content: ''; position: absolute; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: transform .2s; }
+    .toggle-switch input:checked + .slider { background-color: hsl(var(--primary)); }
+    .toggle-switch input:checked + .slider:before { transform: translateX(14px); }
+
+    /* Badges + toasts */
+    .toast {
+      position: fixed; right: 16px; bottom: 16px; z-index: 100;
+      padding: 12px 14px; background: hsl(var(--surface));
+      border: 1px solid hsl(var(--border)); border-radius: 12px;
+      box-shadow: 0 18px 40px -18px hsl(var(--shadow));
+      max-width: 70ch;
+      display: none;
+    }
+    .toast.show { display: block; animation: fade-in .2s ease-out }
+    /* Animations */
+    @keyframes fade-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: translateY(0) } }
+    .fade-in { animation: fade-in .25s ease-out both }
+    .hover-scale { transition: transform .18s ease; }
+    .hover-scale:hover { transform: translateY(-2px) scale(1.01) }
+
+    /* Print styles (export to PDF) */
+    @page {
+      size: A4;
+      margin: 20mm;
+      /* Note: To remove headers (like title, date) and footers (like URL, page number) */
+      /* from the printed PDF, you must adjust your browser's print settings. */
+      /* In Chrome's print dialog, go to "More settings" and uncheck "Headers and footers". */
+      /* This cannot be controlled reliably via CSS. */
+    }
+    @media print {
+      body, .container {
+        background: white !important;
+        min-height: 0;
+      }
+      header, #controls, .toast, .panel-header { display: none !important }
+      .main {
+        display: block;
+        padding: 0;
+        margin: 0;
+      }
+      .panel {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+      }
+      .preview {
+        border: none;
+        box-shadow: none;
+        padding: 0;
+        min-height: 0;
+        overflow: visible;
+      }
+      .resume { color: #111 }
+      .resume h1, .resume h2, .resume p, .resume .meta { color: #111 !important; }
+      .resume .pill { border-color: #ddd; background: #f6f6f6 !important; }
+      .rule {
+        break-inside: avoid;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        background: #333 !important; /* Use a solid color for printing */
+      }
+    }
+  </style>
+  <script type="application/ld+json" id="jsonld">
+  {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    "name": "",
+    "jobTitle": "",
+    "sameAs": [],
+    "url": "."
+  }
+  </script>
+</head>
+<body>
+  <div class="container" id="app">
+    <header>
+      <div class="header-inner">
+        <div class="brand">
+          <div class="logo"></div>
+          <div>
+            AI Resume & Portfolio
+            <div class="muted" style="font-size:12px">Build, optimize, and share</div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button id="toggleTheme" class="btn" aria-label="Toggle dark/light theme">Dark</button>
+          <button id="saveVersion" class="btn" title="Save Snapshot (Ctrl+S)">Save</button>
+          <button id="shareLink" class="btn" title="Create shareable link">Share</button>
+          <button id="exportPdf" class="btn btn-primary" title="Print / Save as PDF (Ctrl+P)">Export PDF</button>
+        </div>
+      </div>
+    </header>
+    <main class="main">
+      <!-- Left controls -->
+      <section class="panel" id="controls">
+        <div class="panel-header">
+          <strong>Editor</strong>
+          <span class="muted" id="autosaveStatus">Autosave On</span>
+        </div>
+        <div class="panel-body" id="editor">
+          <!-- Style -->
+          <div class="section">
+            <label>Formatting</label>
+            <div class="row" style="margin-top:10px">
+              <div>
+                <label for="fontFamily">Font</label>
+                <select id="fontFamily" aria-label="Select font family">
+                  <option value="inter">Inter (Modern Sans)</option>
+                  <option value="roboto">Roboto (Classic Sans)</option>
+                  <option value="lato">Lato (Friendly Sans)</option>
+                  <option value="playfair">Playfair (Elegant Serif)</option>
+                  <option value="merriweather">Merriweather (Readable Serif)</option>
+                  <option value="fira">Fira Code (Code Mono)</option>
+                  <option value="source-code">Source Code Pro (Clean Mono)</option>
+                </select>
+              </div>
+              <div>
+                <label for="language">Language</label>
+                <select id="language" aria-label="Select language">
+                  <option value="en">English</option>
+                  <option value="es">Español</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="pt">Português</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          <!-- Basic Info -->
+          <div class="section" data-section="header">
+            <div class="row">
+              <div>
+                <label for="name">Full Name</label>
+                <input id="name" placeholder="Alex Johnson" aria-label="Full Name" />
+              </div>
+              <div>
+                <label for="title">Role / Title</label>
+                <input id="title" placeholder="Senior Software Engineer" aria-label="Role or Title" />
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <div>
+                <label for="email">Email</label>
+                <input id="email" placeholder="you@example.com" aria-label="Email" />
+              </div>
+              <div>
+                <label for="phone">Phone</label>
+                <input id="phone" placeholder="+1 555 123 4567" aria-label="Phone number" />
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <div>
+                <label for="location">Location</label>
+                <input id="location" placeholder="San Francisco, CA" aria-label="Location" />
+              </div>
+              <div>
+                <label for="website">Website</label>
+                <input id="website" placeholder="https://yourname.dev" aria-label="Website URL" />
+              </div>
+            </div>
+            <div style="margin-top:12px;">
+              <label class="toggle-switch">
+                <input type="checkbox" id="headerLineToggle" checked>
+                <span class="slider"></span>
+                <span style="font-size: 13px; font-weight:600;">Show line under header</span>
+              </label>
+            </div>
+          </div>
+          <!-- Summary -->
+          <div class="section" data-section="summary">
+            <label for="summary">Summary</label>
+            <textarea id="summary" placeholder="Brief professional summary with achievements and focus areas." aria-label="Summary"></textarea>
+          </div>
+          
+          <div class="help">Drag the sections below to reorder them.</div>
+          <div id="draggable-sections" aria-label="Draggable resume sections">
+              <!-- Draggable sections will be inserted here by JS -->
+          </div>
+          <!-- AI Suggestions -->
+          <div class="section">
+            <label>AI Smart Suggestions</label>
+            <div class="row">
+              <div class="full">
+                <label for="aiTarget">Target Role/Industry</label>
+                <input id="aiTarget" placeholder="e.g., Fintech Backend, Data Science" aria-label="Target Role or Industry" />
+              </div>
+            </div>
+            <div class="row" style="margin-top:10px">
+              <div class="full">
+                <label for="aiPrompt">Prompt</label>
+                <textarea id="aiPrompt" placeholder="Improve my summary and bullet points. Tailor to FAANG-style SWE role with concise impact metrics." aria-label="AI Prompt"></textarea>
+              </div>
+            </div>
+            <div class="row" style="margin-top:8px">
+              <button class="btn" id="aiSuggest" type="button">Generate Suggestions</button>
+              <button class="btn btn-primary" id="aiApply" type="button">Apply Suggestions</button>
+            </div>
+             <div class="help">AI will suggest improvements for punchier bullet points and verbs.</div>
+          </div>
+          <!-- Version history -->
+          <div class="section">
+            <label>Version History</label>
+            <div id="history" aria-live="polite"></div>
+            <div class="help">Snapshots include ordering, styles, and content. Click to restore.</div>
+          </div>
+        </div>
+      </section>
+      <!-- Right preview -->
+      <section class="panel">
+        <div class="panel-header">
+          <strong>Live Preview</strong>
+        </div>
+        <div class="panel-body">
+          <div class="preview" id="preview" tabindex="0" aria-label="Resume live preview">
+            <article class="resume" id="resume">
+              <!-- Filled by JS -->
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="alert" aria-live="assertive" aria-atomic="true"></div>
+  <!-- Draggable section templates -->
+  <template id="skills-tpl">
+    <div class="section draggable" draggable="true" data-section="skills">
+      <label for="skills">Skills (comma-separated)</label>
+      <input id="skills" placeholder="React, TypeScript, Node.js, GraphQL, AWS" />
+    </div>
+  </template>
+  <template id="experience-tpl">
+    <div class="section draggable" draggable="true" data-section="experience">
+      <label>Experience</label>
+      <div id="expList"></div>
+      <button class="btn hover-scale addExp" style="margin-top:8px" type="button">+ Add Experience</button>
+    </div>
+  </template>
+  <template id="projects-tpl">
+    <div class="section draggable" draggable="true" data-section="projects">
+      <label>Projects</label>
+      <div id="projList"></div>
+      <button class="btn hover-scale addProj" style="margin-top:8px" type="button">+ Add Project</button>
+    </div>
+  </template>
+  <template id="education-tpl">
+    <div class="section draggable" draggable="true" data-section="education">
+      <label>Education</label>
+      <div id="eduList"></div>
+      <button class="btn hover-scale addEdu" style="margin-top:8px" type="button">+ Add Education</button>
+    </div>
+  </template>
+  <script>
+    // State
+    const $ = (q, el=document) => el.querySelector(q);
+    const $$ = (q, el=document) => [...el.querySelectorAll(q)];
+    const defaultOrder = ['skills','experience','projects','education'];
+    const state = {
+      theme: 'dark',
+      font: 'inter',
+      lang: 'en',
+      order: [...defaultOrder],
+      showHeaderLine: true,
+      resume: {
+        name: 'Alex Johnson',
+        title: 'Senior Software Engineer',
+        email: 'alex@example.com',
+        phone: '+1 555 123 4567',
+        location: 'San Francisco, CA',
+        website: 'https://alex.dev',
+        summary: 'Senior SWE with 8+ years building high-scale products. Led teams, optimized systems, and shipped impactful features.',
+        skills: ['React','TypeScript','Node.js','GraphQL','AWS','PostgreSQL','CI/CD'],
+        experience: [
+          { company: 'Acme Corp', role: 'Staff Engineer', range: '2022 — Present', location: 'Remote', bullets: ['Led migration to microservices, reducing deploy times by 65%','Scaled GraphQL API to 1B+ monthly requests','Mentored 6 engineers; instituted performance reviews']},
+          { company: 'Globex', role: 'Senior Engineer', range: '2019 — 2022', location: 'NYC', bullets: ['Shipped real-time analytics dashboards used by 500+ clients','Cut infra cost by 28% via workload optimization']}
+        ],
+        projects: [
+          { name: 'OpenViz', link: 'https://github.com/you/openviz', desc: 'Open-source charting library focused on accessibility and performance.'},
+          { name: 'TaskFlow', link: 'https://taskflow.app', desc: 'Kanban + time tracking, 15k MAU, 4.8★ rating.'}
+        ],
+        education: [
+          { school: 'State University', degree: 'B.S. Computer Science', range: '2013 — 2017' }
+        ]
+      },
+      history: []
+    };
+    const els = {}; // elements references will be assigned in start()
+
+    function showToast(msg, timeout=3500) {
+      els.toast.textContent = msg;
+      els.toast.classList.add('show');
+      setTimeout(() => els.toast.classList.remove('show'), timeout);
+    }
+
+    function bindBasics() {
+      els.name.value = state.resume.name;
+      els.title.value = state.resume.title;
+      els.email.value = state.resume.email;
+      els.phone.value = state.resume.phone;
+      els.location.value = state.resume.location;
+      els.website.value = state.resume.website;
+      els.summary.value = state.resume.summary;
+      els.skills.value = state.resume.skills.join(', ');
+      els.fontFamily.value = state.font;
+      els.language.value = state.lang;
+      els.headerLineToggle.checked = state.showHeaderLine;
+      document.documentElement.classList.toggle('light', state.theme === 'light');
+      els.toggleTheme.textContent = state.theme === 'light' ? 'Light' : 'Dark';
+    }
+
+    function renderList(container, items, fields, onChange) {
+      container.innerHTML = '';
+      items.forEach((item, idx) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'section';
+        wrap.style.borderStyle = 'solid';
+        const del = document.createElement('button');
+        del.className = 'btn';
+        del.textContent = 'Delete';
+        del.style.cssText = 'margin-top: 8px; background-color: hsl(var(--danger) / .15); border-color: hsl(var(--danger) / .3);';
+        del.onclick = () => {
+          items.splice(idx, 1);
+          onChange();
+          autosave();
+        };
+        const frag = document.createDocumentFragment();
+        fields.forEach(f => {
+          const fieldWrap = document.createElement('div');
+          fieldWrap.style.marginTop = '8px';
+          const lab = document.createElement('label');
+          lab.textContent = f.label;
+          let input;
+          if (f.type === 'textarea') {
+            input = document.createElement('textarea');
+            input.value = item[f.key] || '';
+            input.oninput = (e) => { item[f.key] = e.target.value; renderPreview(); autosaveSoon(); };
+          } else {
+            input = document.createElement('input');
+            input.value = item[f.key] || '';
+            input.placeholder = f.placeholder || '';
+            input.oninput = (e) => { item[f.key] = e.target.value; renderPreview(); autosaveSoon(); };
+          }
+          fieldWrap.appendChild(lab);
+          fieldWrap.appendChild(input);
+          frag.appendChild(fieldWrap);
+        });
+        if (item.bullets) {
+          const lab = document.createElement('label');
+          lab.textContent = 'Bullets (one per line)';
+          const ta = document.createElement('textarea');
+          ta.value = (item.bullets || []).join('\n');
+          ta.oninput = (e) => { item.bullets = e.target.value.split('\n').filter(Boolean); renderPreview(); autosaveSoon(); };
+          wrap.appendChild(lab);
+          wrap.appendChild(ta);
+        }
+        wrap.appendChild(frag);
+        wrap.appendChild(del);
+        container.appendChild(wrap);
+      });
+    }
+
+    function renderExperience() {
+      renderList(els.expList, state.resume.experience,
+        [{ key: 'company', label: 'Company' }, { key: 'role', label: 'Role' }, { key: 'range', label: 'Date Range' }, { key: 'location', label: 'Location' }],
+        renderAll);
+    }
+    function renderProjects() {
+      renderList(els.projList, state.resume.projects,
+        [{ key: 'name', label: 'Name' }, { key: 'link', label: 'Link' }, { key: 'desc', label: 'Description', type: 'textarea' }],
+        renderAll);
+    }
+    function renderEducation() {
+      renderList(els.eduList, state.resume.education,
+        [{ key: 'school', label: 'School' }, { key: 'degree', label: 'Degree' }, { key: 'range', label: 'Date Range' }],
+        renderAll);
+    }
+    function sectionLabel(key) {
+      const t = { en: { summary:'Summary', skills:'Skills', experience:'Experience', projects:'Projects', education:'Education' }};
+      return (t[state.lang] || t.en)[key] || key;
+    }
+    function renderPreview() {
+      const r = state.resume;
+      els.preview.className = `preview`;
+      const fontMap = {
+        inter: 'var(--font-inter)',
+        roboto: 'var(--font-roboto)',
+        lato: 'var(--font-lato)',
+        playfair: 'var(--font-playfair)',
+        merriweather: 'var(--font-merriweather)',
+        fira: 'var(--font-fira)',
+        'source-code': 'var(--font-source-code)'
+      };
+      els.resume.style.setProperty('--resume-font', fontMap[state.font]);
+      const skillsHtml = r.skills.map(s => `<span class="pill">${escapeHtml(s)}</span>`).join('');
+      const expHtml = r.experience.map(e => `
+        <div class="item">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <strong>${escapeHtml(e.role)}</strong><span class="meta">${escapeHtml(e.range)}</span>
+          </div>
+          <div class="meta">${escapeHtml(e.company)} • ${escapeHtml(e.location||'')}</div>
+          <ul style="margin:8px 0 0 16px; padding-left:0;">
+            ${(e.bullets||[]).map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+          </ul>
+        </div>`).join('');
+      const projHtml = r.projects.map(p => `
+        <div class="item">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <strong>${escapeHtml(p.name)}</strong>${p.link ? `<a href="${escapeAttr(p.link)}" target="_blank" rel="noopener" class="meta">${escapeHtml(p.link)}</a>` : ''}
+          </div>
+          <p>${escapeHtml(p.desc||'')}</p>
+        </div>`).join('');
+      const eduHtml = r.education.map(e => `
+        <div class="item">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+            <strong>${escapeHtml(e.school)}</strong><span class="meta">${escapeHtml(e.range||'')}</span>
+          </div>
+          <div class="meta">${escapeHtml(e.degree||'')}</div>
+        </div>`).join('');
+      
+      const headerRule = state.showHeaderLine ? '<div class="rule"></div>' : '';
+
+      const sections = {
+        header: `
+          <h1>${escapeHtml(r.name)}</h1>
+          <div class="meta">${escapeHtml(r.title)}</div>
+          <div class="meta">${escapeHtml(r.email)} • ${escapeHtml(r.phone)} • ${escapeHtml(r.location)}${r.website ? ` • <a href="${escapeAttr(r.website)}" target="_blank" rel="noopener">${escapeHtml(r.website)}</a>` : ''}</div>
+          ${headerRule}`,
+        summary: r.summary ? `<h2>${sectionLabel('summary')}</h2><p>${escapeHtml(r.summary)}</p>` : '',
+        skills: r.skills.length > 0 ? `<h2>${sectionLabel('skills')}</h2><div>${skillsHtml}</div>` : '',
+        experience: r.experience.length > 0 ? `<h2>${sectionLabel('experience')}</h2><div>${expHtml}</div>` : '',
+        projects: r.projects.length > 0 ? `<h2>${sectionLabel('projects')}</h2><div>${projHtml}</div>` : '',
+        education: r.education.length > 0 ? `<h2>${sectionLabel('education')}</h2><div>${eduHtml}</div>` : '',
+      };
+      const fullOrder = ['header', 'summary', ...state.order];
+      els.resume.innerHTML = fullOrder.map(key => sections[key] || '').join('');
+      updateJSONLD();
+    }
+    function updateJSONLD() {
+      const r = state.resume;
+      const data = {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: r.name || "",
+        jobTitle: r.title || "",
+        email: r.email || undefined,
+        telephone: r.phone || undefined,
+        address: r.location || undefined,
+        url: r.website || undefined,
+        sameAs: (r.website ? [r.website] : []),
+        knowsAbout: r.skills
+      };
+      $('#jsonld').textContent = JSON.stringify(data);
+      document.title = `${r.name ? r.name + " — " : ""}AI Resume & Portfolio Builder`;
+    }
+    function escapeHtml(str='') {
+      return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+    function escapeAttr(str='') {
+      return String(str).replace(/"/g, '&quot;');
+    }
+    function autosaveSoon() { clearTimeout(els.autosaveTimer); els.autosaveTimer = setTimeout(autosave, 600); }
+    function autosave() {
+      localStorage.setItem('resumeAppState_v2', JSON.stringify(state));
+      els.autosaveStatus.textContent = 'Saved';
+      setTimeout(() => els.autosaveStatus.textContent = 'Autosave On', 1200);
+    }
+    function loadSaved() {
+      const validateOrder = (order) => {
+        if (!Array.isArray(order)) return false;
+        const present = new Set(order);
+        return defaultOrder.every(item => present.has(item)) && order.length === defaultOrder.length;
+      };
+      const raw = localStorage.getItem('resumeAppState_v2');
+      if (raw) {
+        try {
+          const savedState = JSON.parse(raw);
+          // Simple validation
+          if (!validateOrder(savedState.order)) {
+            savedState.order = [...defaultOrder];
+          }
+          Object.assign(state, savedState);
+        } catch {}
+      }
+    }
+    function renderAll() {
+      bindBasics();
+      renderExperience();
+      renderProjects();
+      renderEducation();
+      renderPreview();
+      renderHistory();
+    }
+    function setupDragAndDrop() {
+      const container = els.draggableSections;
+      $$('.section.draggable', container).forEach(sec => {
+        sec.addEventListener('dragstart', e => e.dataTransfer.setData('text/section', sec.dataset.section));
+        sec.addEventListener('dragover', e => { e.preventDefault(); sec.classList.add('drag-over'); });
+        sec.addEventListener('dragleave', () => sec.classList.remove('drag-over'));
+        sec.addEventListener('drop', e => {
+          e.preventDefault();
+          sec.classList.remove('drag-over');
+          const from = e.dataTransfer.getData('text/section');
+          const to = sec.dataset.section;
+          if (!from || !to || from === to) return;
+          const order = state.order;
+          const fromIndex = order.indexOf(from);
+          const toIndex = order.indexOf(to);
+          order.splice(toIndex, 0, order.splice(fromIndex, 1)[0]);
+          renderDraggableSections();
+          renderPreview();
+          autosave();
+        });
+      });
+    }
+    function renderDraggableSections() {
+      const container = els.draggableSections;
+      container.innerHTML = '';
+      state.order.forEach(key => {
+        const template = $(`#${key}-tpl`);
+        if (template) container.appendChild(template.content.cloneNode(true));
+      });
+      els.skills = $('#skills', container);
+      els.expList = $('#expList', container);
+      els.projList = $('#projList', container);
+      els.eduList = $('#eduList', container);
+      els.skills.value = state.resume.skills.join(', ');
+      els.skills.addEventListener('input', e => {
+        state.resume.skills = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
+        renderPreview();
+        autosaveSoon();
+      });
+      $('.addExp', container).onclick = () => {
+        state.resume.experience.push({ company: '', role: '', range: '', location: '', bullets: [] });
+        renderAll(); autosave();
+      };
+      $('.addProj', container).onclick = () => {
+        state.resume.projects.push({ name: '', link: '', desc: '' });
+        renderAll(); autosave();
+      };
+      $('.addEdu', container).onclick = () => {
+        state.resume.education.push({ school: '', degree: '', range: '' });
+        renderAll(); autosave();
+      };
+      renderExperience();
+      renderProjects();
+      renderEducation();
+      setupDragAndDrop();
+    }
+    function renderHistory() {
+      els.history.innerHTML = '';
+      if (!state.history.length) {
+        els.history.textContent = 'No snapshots saved.';
+        return;
+      }
+      state.history.forEach((snap, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.style.marginBottom = '6px';
+        btn.textContent = snap.timestamp ? new Date(snap.timestamp).toLocaleString() : `Snapshot ${idx + 1}`;
+        btn.onclick = () => {
+          Object.assign(state, JSON.parse(JSON.stringify(snap.state)));
+          renderAll();
+          showToast('Snapshot restored.');
+        };
+        els.history.appendChild(btn);
+      });
+    }
+    function pushHistory() {
+      const snapshot = {
+        timestamp: Date.now(),
+        state: JSON.parse(JSON.stringify({
+          theme: state.theme,
+          font: state.font,
+          lang: state.lang,
+          order: state.order,
+          showHeaderLine: state.showHeaderLine,
+          resume: state.resume,
+        }))
+      };
+      state.history.unshift(snapshot);
+      if (state.history.length > 20) state.history.pop();
+    }
+    function start() {
+      Object.assign(els, {
+        app: $('#app'), preview: $('#preview'), resume: $('#resume'),
+        fontFamily: $('#fontFamily'), language: $('#language'), name: $('#name'), title: $('#title'),
+        email: $('#email'), phone: $('#phone'), location: $('#location'), website: $('#website'),
+        summary: $('#summary'), aiTarget: $('#aiTarget'), aiPrompt: $('#aiPrompt'),
+        aiSuggest: $('#aiSuggest'), aiApply: $('#aiApply'), headerLineToggle: $('#headerLineToggle'),
+        history: $('#history'), toast: $('#toast'), toggleTheme: $('#toggleTheme'),
+        saveVersion: $('#saveVersion'), exportPdf: $('#exportPdf'), shareLink: $('#shareLink'),
+        autosaveStatus: $('#autosaveStatus'), controls: $('#controls'), draggableSections: $('#draggable-sections')
+      });
+      loadSaved();
+      renderDraggableSections();
+      renderAll();
+      ['name', 'title', 'email', 'phone', 'location', 'website'].forEach(id => {
+        els[id].addEventListener('input', e => {
+          state.resume[id] = e.target.value; renderPreview(); autosaveSoon();
+        });
+      });
+      els.summary.addEventListener('input', e => {
+        state.resume.summary = e.target.value; renderPreview(); autosaveSoon();
+      });
+      els.fontFamily.addEventListener('change', e => {
+        state.font = e.target.value; renderPreview(); autosave();
+      });
+      els.language.addEventListener('change', e => {
+        state.lang = e.target.value; renderPreview(); autosave();
+      });
+      els.headerLineToggle.addEventListener('change', e => {
+        state.showHeaderLine = e.target.checked; renderPreview(); autosave();
+      });
+      els.aiSuggest.onclick = async () => { showToast('AI Suggestions are not implemented yet.'); };
+      els.aiApply.onclick = () => { showToast('AI Apply not implemented yet.'); };
+      els.toggleTheme.onclick = () => {
+        state.theme = (state.theme === 'dark') ? 'light' : 'dark';
+        document.documentElement.classList.toggle('light', state.theme === 'light');
+        els.toggleTheme.textContent = state.theme === 'light' ? 'Light' : 'Dark';
+        autosave();
+      };
+      els.exportPdf.onclick = () => {
+        const originalTitle = document.title;
+        // Set a clean title, as browsers use this for the print header and PDF filename.
+        document.title = state.resume.name ? `${state.resume.name} - Resume` : 'Resume';
+
+        window.print();
+
+        // Restore the original title after the print dialog is closed.
+        // A timeout is used because the print operation is asynchronous.
+        setTimeout(() => {
+          document.title = originalTitle;
+        }, 1000);
+      };
+      els.shareLink.onclick = async () => { showToast('Share feature not implemented yet.'); };
+      els.saveVersion.onclick = () => {
+        pushHistory();
+        renderHistory();
+        showToast('Snapshot saved.');
+        autosave();
+      };
+      document.addEventListener('keydown', e => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); els.saveVersion.click(); }
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'p') { e.preventDefault(); els.exportPdf.click(); }
+      });
+      renderHistory();
+      autosave();
+    }
+    start();
+  </script>
+</body>
+</html>
